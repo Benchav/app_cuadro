@@ -1,0 +1,16 @@
+name: cuadro_imagen
+description: Un cuadro digital para mostrar imágenes.
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  permission_handler: ^11.0.1
+  wakelock_plus: ^1.1.1
+
+flutter:
+  uses-material-design: true
