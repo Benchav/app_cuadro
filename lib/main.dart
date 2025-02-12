@@ -90,56 +90,75 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
     if (images.isNotEmpty) {
       _timer?.cancel();
       _timer = Timer.periodic(Duration(seconds: 10), (timer) {
-        setState(() {
-          currentIndex = (currentIndex + 1) % images.length;
-        });
+        _nextImage();
       });
     }
+  }
+
+  void _nextImage() {
+    setState(() {
+      currentIndex = (currentIndex + 1) % images.length;
+    });
+  }
+
+  void _previousImage() {
+    setState(() {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Center(
-              child: images.isEmpty
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 10),
-                        Text("Cargando imágenes...", style: TextStyle(color: Colors.white, fontSize: 16)),
-                      ],
-                    )
-                  : AnimatedSwitcher(
-                      duration: Duration(seconds: 3),
-                      transitionBuilder: (Widget child, Animation<double> animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: Offset(0.2, 0.0),
-                              end: Offset(0.0, 0.0),
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Image.file(
-                        images[currentIndex],
-                        key: ValueKey<int>(currentIndex),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity! < 0) {
+            _nextImage();
+          } else if (details.primaryVelocity! > 0) {
+            _previousImage();
+          }
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: images.isEmpty
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 10),
+                          Text("Cargando imágenes...", style: TextStyle(color: Colors.white, fontSize: 16)),
+                        ],
+                      )
+                    : AnimatedSwitcher(
+                        duration: Duration(seconds: 3),
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: Offset(0.2, 0.0),
+                                end: Offset(0.0, 0.0),
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Image.file(
+                          images[currentIndex],
+                          key: ValueKey<int>(currentIndex),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
                       ),
-                    ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
