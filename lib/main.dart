@@ -5,7 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -31,19 +30,18 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
   List<File> images = [];
   int currentIndex = 0;
   Timer? _timer;
-  double _opacity = 1.0;
 
   @override
   void initState() {
     super.initState();
     _requestPermission();
-    WakelockPlus.enable(); // Evita que la pantalla se apague
+    WakelockPlus.enable();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    WakelockPlus.disable(); // Permite que la pantalla se apague cuando se cierra la app
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -72,14 +70,11 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
     for (String dirPath in possibleDirs) {
       Directory dir = Directory(dirPath);
       if (await dir.exists()) {
-        print("📂 Directorio encontrado: $dirPath");
         List<FileSystemEntity> files = dir.listSync(recursive: true);
         List<File> foundImages = files.whereType<File>().where((file) {
           return file.path.toLowerCase().endsWith(".jpg") || file.path.toLowerCase().endsWith(".png");
         }).toList();
         tempImages.addAll(foundImages);
-      } else {
-        print("❌ No se encontró: $dirPath");
       }
     }
 
@@ -88,8 +83,6 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
         images = tempImages;
       });
       _startSlideshow();
-    } else {
-      print("⚠️ No se encontraron imágenes.");
     }
   }
 
@@ -98,13 +91,7 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
       _timer?.cancel();
       _timer = Timer.periodic(Duration(seconds: 10), (timer) {
         setState(() {
-          _opacity = 0.0;
-        });
-        Future.delayed(Duration(seconds: 1), () {
-          setState(() {
-            currentIndex = (currentIndex + 1) % images.length;
-            _opacity = 1.0;
-          });
+          currentIndex = (currentIndex + 1) % images.length;
         });
       });
     }
@@ -128,11 +115,23 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
                         Text("Cargando imágenes...", style: TextStyle(color: Colors.white, fontSize: 16)),
                       ],
                     )
-                  : AnimatedOpacity(
-                      duration: Duration(seconds: 1),
-                      opacity: _opacity,
+                  : AnimatedSwitcher(
+                      duration: Duration(seconds: 3),
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: Offset(0.2, 0.0),
+                              end: Offset(0.0, 0.0),
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
                       child: Image.file(
                         images[currentIndex],
+                        key: ValueKey<int>(currentIndex),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,
@@ -140,14 +139,6 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
                     ),
             ),
           ),
-          if (images.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: _loadImages,
-                child: Text("🔄 Recargar imágenes"),
-              ),
-            ),
         ],
       ),
     );
